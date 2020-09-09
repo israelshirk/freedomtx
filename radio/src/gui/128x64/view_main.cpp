@@ -20,7 +20,7 @@
 
 #include "opentx.h"
 
-#if defined(HARDWARE_NO_TRIMS)
+#if defined(HARDWARE_NO_TRIMS) || defined(PCBTANGO)
 struct {
   int8_t preStickIdx = -1;
   int8_t curStickIdx = -1;
@@ -107,7 +107,7 @@ void doMainScreenGraphics()
   drawPotsBars();
 }
 
-#if defined(HARDWARE_NO_TRIMS)
+#if defined(HARDWARE_NO_TRIMS) && defined(PCBTBS) && !defined(SIMU)
 void doMainScreenGraphics(uint8_t views, uint32_t ptr)
 {
   int16_t * calibStickValPtr = nullptr;
@@ -136,6 +136,100 @@ void doMainScreenGraphics(uint8_t views, uint32_t ptr)
 }
 #endif
 
+#if defined(PCBTANGO)
+void displayTrims(uint8_t phase, uint8_t editMode)
+{
+  for (uint8_t i=0; i<4; i++) {
+    static coord_t x[4] = {TRIM_LH_X, TRIM_LV_X, TRIM_RV_X, TRIM_RH_X};
+    static uint8_t vert[4] = {0,1,1,0};
+    coord_t xm, ym;
+    uint8_t stickIndex = CONVERT_MODE(i);
+    xm = x[stickIndex];
+    uint8_t att = ROUND;
+    int16_t val = getTrimValue(phase, i);
+
+    int16_t dir = val;
+    bool exttrim = false;
+    if (val < TRIM_MIN || val > TRIM_MAX) {
+      exttrim = true;
+    }
+    if (val < -(TRIM_LEN+1)*4) {
+      val = -(TRIM_LEN+1);
+    }
+    else if (val > (TRIM_LEN+1)*4) {
+      val = TRIM_LEN+1;
+    }
+    else {
+      val /= 4;
+    }
+
+    if (vert[i]) {
+      ym = 61;
+      if (trimSelection.curStickIdx == i) {
+        lcdDrawSolidVerticalLine(xm, ym-TRIM_LEN, TRIM_LEN*2);
+        if (i!=2 || !g_model.thrTrim) {
+          lcdDrawSolidVerticalLine(xm-1, ym-TRIM_LEN,  TRIM_LEN*2);
+          lcdDrawSolidVerticalLine(xm+1, ym-TRIM_LEN,  TRIM_LEN*2);
+        }
+      }
+      else {
+        lcdDrawSolidVerticalLine(xm, ym-TRIM_LEN, TRIM_LEN*2);
+        if (i!=2 || !g_model.thrTrim) {
+          lcdDrawSolidVerticalLine(xm-1, ym-1,  3);
+          lcdDrawSolidVerticalLine(xm+1, ym-1,  3);
+        }
+      }
+      ym -= val;
+      lcdDrawFilledRect(xm-3, ym-3, 7, 7, SOLID, att|ERASE);
+      if (dir >= 0) {
+        lcdDrawSolidHorizontalLine(xm-1, ym-1,  3);
+      }
+      if (dir <= 0) {
+        lcdDrawSolidHorizontalLine(xm-1, ym+1,  3);
+      }
+      if (exttrim) {
+        lcdDrawSolidHorizontalLine(xm-1, ym,  3);
+      }
+
+      if (g_model.displayTrims != DISPLAY_TRIMS_NEVER && dir != 0) {
+        if (g_model.displayTrims == DISPLAY_TRIMS_ALWAYS || (trimsDisplayTimer > 0 && (trimsDisplayMask & (1<<i)))) {
+          lcdDrawNumber(dir>0 ? 12 : 40, xm-2, -abs(dir/5), TINSIZE|VERTICAL);
+        }
+      }
+    }
+    else {
+      ym = 92;
+      if (trimSelection.curStickIdx == i) {
+        lcdDrawSolidHorizontalLine(xm-TRIM_LEN, ym,   TRIM_LEN*2);
+        lcdDrawSolidHorizontalLine(xm-TRIM_LEN, ym-1, TRIM_LEN*2);
+        lcdDrawSolidHorizontalLine(xm-TRIM_LEN, ym+1, TRIM_LEN*2);
+      }
+      else {
+        lcdDrawSolidHorizontalLine(xm-TRIM_LEN, ym, TRIM_LEN*2);
+        lcdDrawSolidHorizontalLine(xm-1, ym-1,  3);
+        lcdDrawSolidHorizontalLine(xm-1, ym+1,  3);
+      }
+      xm += val;
+      lcdDrawFilledRect(xm-3, ym-3, 7, 7, SOLID, att|ERASE);
+      if (dir >= 0) {
+        lcdDrawSolidVerticalLine(xm+1, ym-1,  3);
+      }
+      if (dir <= 0) {
+        lcdDrawSolidVerticalLine(xm-1, ym-1,  3);
+      }
+      if (exttrim) {
+        lcdDrawSolidVerticalLine(xm, ym-1,  3);
+      }
+      if (g_model.displayTrims != DISPLAY_TRIMS_NEVER && dir != 0) {
+        if (g_model.displayTrims == DISPLAY_TRIMS_ALWAYS || (trimsDisplayTimer > 0 && (trimsDisplayMask & (1<<i)))) {
+          lcdDrawNumber((stickIndex==0 ? (dir>0 ? TRIM_LH_POS : TRIM_LH_NEG) : (dir>0 ? TRIM_RH_POS : TRIM_RH_NEG)), ym-2, -abs(dir/5), TINSIZE);
+        }
+      }
+    }
+    lcdDrawSquare(xm-3, ym-3, 7, att);
+  }
+}
+#else
 void displayTrims(uint8_t phase)
 {
   for (uint8_t i = 0; i < 4; i++) {
@@ -246,6 +340,7 @@ void displayTrims(uint8_t phase)
     lcdDrawSquare(xm - 3, ym - 3, 7, att);
   }
 }
+#endif
 
 void displayBattVoltage()
 {
@@ -255,7 +350,10 @@ void displayBattVoltage()
   lcdDrawSolidVerticalLine(VBATT_X - 4, VBATT_Y + 10, 3);
   uint8_t count = GET_TXBATT_BARS(20);
 
-  #if defined(HARDWARE_CHARGING_STATE)
+  #if defined(PCBTBS)
+    if (IS_CHARGING_STATE())
+      count = (get_tmr10ms() % 100) * count / 100;
+  #elif defined(HARDWARE_CHARGING_STATE)
   if (IS_CHARGING_STATE()) {
     count = (get_tmr10ms() & 127u) * count / 128;
   }
@@ -328,6 +426,12 @@ void displayVoltageOrAlarm()
 
 void onMainViewMenu(const char * result)
 {
+#if defined(PCBTBS)
+  if (result == STR_MODEL_SELECT) {
+    chainMenu(menuModelSelect);
+  }
+  else
+#endif
   if (result == STR_RESET_TIMER1) {
     timerReset(0);
   }
@@ -416,7 +520,7 @@ void menuMainView(event_t event)
       */
     case EVT_KEY_NEXT_PAGE:
     case EVT_KEY_PREVIOUS_PAGE:
-#if defined(HARDWARE_NO_TRIMS)
+#if defined(HARDWARE_NO_TRIMS) || defined(PCBTANGO)
       if (g_trimEditMode == EDIT_TRIM_DISABLED) {
         if (view_base == VIEW_INPUTS)
           g_eeGeneral.view ^= ALTERNATE_VIEW;
@@ -435,6 +539,9 @@ void menuMainView(event_t event)
     case EVT_KEY_CONTEXT_MENU:
       killEvents(event);
 
+#if defined(PCBTBS)
+      POPUP_MENU_ADD_ITEM(STR_MODEL_SELECT);
+#endif
       if (modelHasNotes()) {
         POPUP_MENU_ADD_ITEM(STR_VIEW_NOTES);
       }
@@ -455,7 +562,11 @@ void menuMainView(event_t event)
 #endif
 
     case EVT_KEY_MODEL_MENU:
+#if defined(PCBTBS)
+      pushMenu(menuCrossfireSetup);
+#else
       pushMenu(menuModelSelect);
+#endif
       killEvents(event);
       break;
 
@@ -464,7 +575,7 @@ void menuMainView(event_t event)
       killEvents(event);
       break;
 #endif
-#if defined(HARDWARE_NO_TRIMS)
+#if defined(HARDWARE_NO_TRIMS) || defined(PCBTANGO)
       case EVT_KEY_FIRST(KEY_ENTER):
         if (!trimSelection.preEnterValid) {
           trimSelection.preEnterValid = true;
@@ -508,6 +619,11 @@ void menuMainView(event_t event)
 #else
     case EVT_KEY_NEXT_VIEW:
       g_eeGeneral.view = (view_base == 0 ? VIEW_COUNT - 1 : view_base - 1);
+#if defined(PCBTBS)
+      if (g_eeGeneral.view == VIEW_TIMER2 && !g_model.timers[1].mode) {
+        g_eeGeneral.view--;
+      }
+#endif
       storageDirty(EE_GENERAL);
       break;
 #endif
@@ -530,7 +646,7 @@ void menuMainView(event_t event)
         gvarDisplayTimer = 0;
       }
 #endif
-#if defined(HARDWARE_NO_TRIMS)
+#if defined(HARDWARE_NO_TRIMS) || defined(PCBTANGO)
       if (g_trimEditMode != EDIT_TRIM_DISABLED) {
         g_trimEditMode = EDIT_TRIM_DISABLED;
         AUDIO_MAIN_MENU();
@@ -540,7 +656,7 @@ void menuMainView(event_t event)
 #endif
       break;
   }
-#if defined(HARDWARE_NO_TRIMS)
+#if defined(HARDWARE_NO_TRIMS) || defined(PCBTANGO)
   if (trimSelection.preEnterValid && (get_tmr10ms() - trimSelection.preEnterTime) > 50) {
     trimSelection.preEnterValid = false;
   }
@@ -563,7 +679,7 @@ void menuMainView(event_t event)
 
         if (view_base == VIEW_OUTPUTS_VALUES) {
           x0 = (i % 4 * 9 + 3) * FW / 2;
-#if LCD_H >= 96
+#if (LCD_H >= 96) || defined(PCBTANGO)
           y0 = i / 4 * FH * 2 + 50;
 #else
           y0 = i / 4 * FH + 40;
@@ -579,7 +695,7 @@ void menuMainView(event_t event)
         else {
           constexpr coord_t WBAR2 = (50 / 2);
           x0 = i < 4 ? LCD_W / 4 + 2 : LCD_W * 3 / 4 - 2;
-#if LCD_H >= 96
+#if (LCD_H >= 96) || defined(PCBTANGO)
           y0 = 45 + (i % 4) * 10;
 #else
           y0 = 38 + (i % 4) * 5;
@@ -736,7 +852,11 @@ void menuMainView(event_t event)
     drawTimerWithMode(125, 2 * FH, 0, RIGHT | DBLSIZE);
 
     // Trims sliders
+#if defined(PCBTANGO)
     displayTrims(mode);
+#else
+    displayTrims(mode);
+#endif
 
     // RSSI gauge / external antenna
     drawExternalAntennaAndRSSI();
