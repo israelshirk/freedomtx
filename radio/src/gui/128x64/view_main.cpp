@@ -61,13 +61,6 @@ struct {
 #define RSSI_MAX      105
 #define TRIM_LEN      23
 
-#if defined(PCBTANGO)
-int8_t pre_stick_idx = -1;
-int8_t cur_stick_idx = -1;
-tmr10ms_t pre_enter_time;
-bool pre_enter_valid = false;
-#endif
-
 void drawExternalAntennaAndRSSI()
 {
 #if defined(INTERNAL_MODULE_PXX1) && defined(EXTERNAL_ANTENNA)
@@ -127,6 +120,8 @@ void doMainScreenGraphics(uint8_t views, uint32_t ptr)
   calibStickVert = calibStickValPtr[CONVERT_MODE(1)];
 
   if (views & MAINSCREEN_GRAPHICS_STICKS) {
+  if (views & MAINSCREEN_GRAPHICS_STICKS)
+  {
     if (g_model.throttleReversed && CONVERT_MODE(1) == THR_STICK)
       calibStickVert = -calibStickVert;
     drawStick(LBOX_CENTERX, calibStickValPtr[CONVERT_MODE(0)], calibStickVert);
