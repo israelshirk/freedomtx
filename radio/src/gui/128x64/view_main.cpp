@@ -19,6 +19,7 @@
  */
 
 #include "opentx.h"
+#define PCBTANGO 1
 
 #if defined(HARDWARE_NO_TRIMS) || defined(PCBTANGO)
 struct {
