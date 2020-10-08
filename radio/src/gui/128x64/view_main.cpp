@@ -120,8 +120,6 @@ void doMainScreenGraphics(uint8_t views, uint32_t ptr)
   calibStickVert = calibStickValPtr[CONVERT_MODE(1)];
 
   if (views & MAINSCREEN_GRAPHICS_STICKS) {
-  if (views & MAINSCREEN_GRAPHICS_STICKS)
-  {
     if (g_model.throttleReversed && CONVERT_MODE(1) == THR_STICK)
       calibStickVert = -calibStickVert;
     drawStick(LBOX_CENTERX, calibStickValPtr[CONVERT_MODE(0)], calibStickVert);
@@ -278,9 +276,9 @@ void displayBattVoltage()
 #if defined(PCBSKY9X)
 void displayVoltageOrAlarm()
 {
-  if (g_eeGeneral.mAhWarn && (g_eeGeneral.mAhUsed + Current_used * (488 + g_eeGeneral.txCurrentCalibration)/8192/36) / 500 >= g_eeGeneral.mAhWarn) {
-    drawValueWithUnit(7*FW-1, 2*FH, (g_eeGeneral.mAhUsed + Current_used*(488 + g_eeGeneral.txCurrentCalibration)/8192/36)/10, UNIT_MAH,
-                      BLINK|INVERS|DBLSIZE|RIGHT);
+  if (g_eeGeneral.mAhWarn && (g_eeGeneral.mAhUsed + Current_used * (488 + g_eeGeneral.txCurrentCalibration) / 8192 / 36) / 500 >= g_eeGeneral.mAhWarn) {
+    drawValueWithUnit(7 * FW - 1, 2 * FH, (g_eeGeneral.mAhUsed + Current_used * (488 + g_eeGeneral.txCurrentCalibration) / 8192 / 36) / 10, UNIT_MAH,
+                      BLINK | INVERS | DBLSIZE | RIGHT);
   }
   else {
     displayBattVoltage();
