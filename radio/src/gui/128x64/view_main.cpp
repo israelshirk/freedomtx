@@ -425,15 +425,14 @@ void menuMainView(event_t event)
           g_eeGeneral.view ^= ALTERNATE_VIEW;
         else
           g_eeGeneral.view = (g_eeGeneral.view + (4 * ALTERNATE_VIEW) + ((event == EVT_KEY_PREVIOUS_PAGE) ? -ALTERNATE_VIEW : ALTERNATE_VIEW)) % (4 * ALTERNATE_VIEW);
+
       }
-      break;
-#else
+#endif
       if (view_base == VIEW_INPUTS)
         g_eeGeneral.view ^= ALTERNATE_VIEW;
       else
         g_eeGeneral.view = (g_eeGeneral.view + (4 * ALTERNATE_VIEW) + ((event == EVT_KEY_PREVIOUS_PAGE) ? -ALTERNATE_VIEW : ALTERNATE_VIEW)) % (4 * ALTERNATE_VIEW);
       break;
-#endif
 
     case EVT_KEY_CONTEXT_MENU:
       killEvents(event);
@@ -662,7 +661,7 @@ void menuMainView(event_t event)
           }
         }
 #elif defined(PCBTANGO)
-        int sw_i;
+        int swIndex;
         for (int i = 0; i < NUM_SWITCHES; ++i) {
           if (SWITCH_EXISTS(i)) {
             uint8_t x = 2 * FW - 2, y = 4 * FH + i * FH + 20;
@@ -670,13 +669,11 @@ void menuMainView(event_t event)
               x = 16 * FW + 6;
               y -= (NUM_SWITCHES / 2) * FH;
             }
-            //TDOD : move switchesReorder definition in board.h
-            static const uint8_t switchesReorder[] = {0, 1, 5, 3, 2, 4};
 
             // re-arrange order according to physical layout
-            i = switchesReorder[i];
-            getvalue_t val = getValue(MIXSRC_FIRST_SWITCH + sw_i);
-            getvalue_t sw = ((val < 0) ? 3 * sw_i + 1 : ((val == 0) ? 3 * sw_i + 2 : 3 * sw_i + 3));
+            swIndex = switchReOrder[i];
+            getvalue_t val = getValue(MIXSRC_FIRST_SWITCH + swIndex);
+            getvalue_t sw = ((val < 0) ? 3 * swIndex + 1 : ((val == 0) ? 3 * swIndex + 2 : 3 * swIndex + 3));
             drawSwitch(x, y, sw, 0);
           }
         }
