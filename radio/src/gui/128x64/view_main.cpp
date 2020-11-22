@@ -425,7 +425,6 @@ void menuMainView(event_t event)
           g_eeGeneral.view ^= ALTERNATE_VIEW;
         else
           g_eeGeneral.view = (g_eeGeneral.view + (4 * ALTERNATE_VIEW) + ((event == EVT_KEY_PREVIOUS_PAGE) ? -ALTERNATE_VIEW : ALTERNATE_VIEW)) % (4 * ALTERNATE_VIEW);
-
       }
 #endif
       if (view_base == VIEW_INPUTS)
@@ -582,7 +581,7 @@ void menuMainView(event_t event)
           constexpr coord_t WBAR2 = (50 / 2);
           x0 = i < 4 ? LCD_W / 4 + 2 : LCD_W * 3 / 4 - 2;
 #if (LCD_H >= 96) || defined(PCBTANGO)
-          y0 = 45 + (i % 4) * 10;
+\          y0 = 45 + (i % 4) * 10;
 #else
           y0 = 38 + (i % 4) * 5;
 #endif

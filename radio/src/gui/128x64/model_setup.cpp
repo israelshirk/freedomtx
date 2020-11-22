@@ -730,7 +730,8 @@ void menuModelSetup(event_t event)
           if (SWITCH_WARNING_ALLOWED(i)) {
             div_t qr = div(current, MAX_SWITCH_PER_LINE);
             if (!READ_ONLY() && event==EVT_KEY_BREAK(KEY_ENTER) && attr && l_posHorz == current && old_posHorz >= 0) {
-              g_model.switchWarningEnable ^= (1 << i); storageDirty(EE_MODEL);
+              g_model.switchWarningEnable ^= (1 << i);
+              storageDirty(EE_MODEL);
 #if defined(PCBXLITE)
               s_editMode = 0;
 #endif
