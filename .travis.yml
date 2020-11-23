@@ -25,12 +25,13 @@ env:
     - GCC_ARM_VERSION=4_7-2013q3
   matrix:
     - FLAVOR=COMPANION
-    - FLAVOR=ARM9X
-    - FLAVOR=X9LITE
+    # - FLAVOR=ARM9X
+    # - FLAVOR=X9LITE
     - FLAVOR=X7
-    - FLAVOR=XLITE
-    - FLAVOR=X9
-    - FLAVOR=COLORLCD
+    # - FLAVOR=XLITE
+    # - FLAVOR=X9
+    #- FLAVOR=COLORLCD
+    - FLAVOR=TANGO
 
 before_install:
   - wget --quiet https://developer.arm.com/-/media/Files/downloads/gnu-rm/6-2017q2/gcc-arm-none-eabi-6-2017-q2-update-linux.tar.bz2
